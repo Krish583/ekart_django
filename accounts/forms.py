@@ -3,7 +3,8 @@ from .models import Account
 
 class RegistrationForm(forms.ModelForm):
     password = forms.CharField(widget = forms.PasswordInput(attrs={
-    'placeholder': "Enter password"
+    'placeholder': "Enter password",
+    #'class' :"form-control",
     }))
     confirm_password = forms.CharField(widget = forms.PasswordInput(attrs={
     'placeholder': "Confirm password"
@@ -19,7 +20,7 @@ class RegistrationForm(forms.ModelForm):
 
         if password != confirm_password:
             raise forms.ValidationError(
-                "Password and confirm password oes not match!!"
+                "Password and confirm password does not match!!"
             )
 
     # applying styles to django form fields
