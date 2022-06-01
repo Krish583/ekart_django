@@ -1,5 +1,6 @@
 from django.db import models
 from store.models import Product,Variation
+from accounts.models import Account
 
 
 
@@ -12,7 +13,7 @@ class Cart(models.Model):
         return self.cart_id # just to overwrite the object name of the class
 
 class CartItem(models.Model):
-    #user = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(Account, on_delete=models.CASCADE, null=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     variations = models.ManyToManyField(Variation, blank=True) # many products may have same variation and single product may have many variations..so we used MANYToMANY here
     cart    = models.ForeignKey(Cart, on_delete=models.CASCADE, null=True)

@@ -3,7 +3,9 @@ from .forms import RegistrationForm
 from .models import Account
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
-
+from carts.models import Cart,CartItem
+from carts.views import _cart_id
+import requests
 
 # Verification email
 from django.contrib.sites.shortcuts import get_current_site
@@ -57,9 +59,56 @@ def login(request):
         user = auth.authenticate(email=email,password=password)
 
         if user is not None:
+            try:
+                cart = Cart.objects.get(cart_id=_cart_id(request))
+                is_cart_item_exists = CartItem.objects.filter(cart=cart).exists()
+                if is_cart_item_exists:
+                    cart_item = CartItem.objects.filter(cart=cart) # gives all the cart items that are assigned to cart id
+
+                    product_variation=[]
+                    #getting the product variation
+                    for item in cart_item:
+                        variation = item.variations.all()
+                        product_variation.append(list(variation)) # by default, above variation is a queryset, so we are converting to ex_var_list
+                    # get cart items from user to access his variation list
+                    cart_item = CartItem.objects.filter( user=user)
+                    ex_var_list = []
+                    id = []
+                    for item in cart_item:
+                        existing_variation = item.variations.all()
+                        ex_var_list.append(list(existing_variation))
+                        id.append(item.id)
+
+                    # Here, product_variation =[1,2,4,5,7] and ex_var_list =[3,5,1] , so we have comman elements in both lists, we need to compare and increase the cart_count
+
+                    for pr in product_variation:
+                        if pr in ex_var_list:
+                            index=ex_var_list.index(pr) # we are fetching the index of pr in product varaition
+                            item_id=id[index] # getting the item
+                            item = CartItem.objects.get(id=item_id)
+                            item.quantity += 1
+                            item.user=user # assigning the user to the cart item which we are adding to exiting cart of logged in user
+                            item.save()
+                        else:
+                            cart_item = CartItem.objects.filter(product=product, user=user)
+                            for item in cart_item:
+                                item.user=user
+                                item.save()
+
+            except:
+                pass
             auth.login(request,user)
             messages.success(request, 'You are now logged in')
-            return redirect('home')
+            url=requests.META.get('HTTP_REFERER')
+            try:
+                query=requests.utils.url_parse(url).query
+                params = dict(x.split('=') for x in query.split('&'))
+                if 'next' in params:
+                    nextPage = params['next']
+                    return redirect(nextPage)
+
+            except:
+                return redirect('home')
         else:
             messages.error(request,'Invalid login credentials. ')
             return redirect('login')
@@ -116,7 +165,7 @@ def forgotPassword(request):
 
             messages.success(request,"Password reset mail has been sent")
 
-            return rediredt('login')
+            return redirect('login')
         else:
             messages.error(request, 'Account does not exist!')
             return redirect('forgotPassword')

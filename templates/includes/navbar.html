@@ -40,7 +40,7 @@
       <div class="dropdown-menu">
 
           <a class="dropdown-item" href="{{% url 'store' %}">All Products </a>
-        {% for category in links %}
+        {% for category in links %} <!-- from context processor, we are send the dict as links so we are using links here -->
           <a class="dropdown-item" href="{{ category.get_url}}">{{category.category_name}} </a>
         {% endfor %}
       </div>
